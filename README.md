@@ -37,3 +37,54 @@ contract SimpleStorage {
 ```
 - This contract allows anyone to store a single number
   - Anyone could set it with a different number and overwrite my number
+
+### Subcurrency Example
+- Implements a simple cryptocurrency
+- Allows only its creator to create nw coins
+- Anyone can send coins to each other without a need for registering with  username and password
+  - All you need is an Ethereum keypair
+
+```solidity
+// SPDX-License-Identifier; GPL-3.0
+pragma solidity ^0.8.4;
+
+contract Coin {
+    // makes this variable accessible from other contracts
+    address public minter;
+    mapping (address => uint) public balances;
+
+    // events allow clients to react to specific contract changes you declare
+    event Sent(address from, address to, uint amount);
+
+    // constructor code is only run when the contract is created
+    constructor() {
+        minter = msg.sender;
+    }
+
+    // sends an amount of newly generated tokens to an address
+    // can only be used by the creator
+    function mint(address receiver, uint amount) public {
+        require(msg.sender == minter);
+        balances[receiver] += amount;
+    }
+
+    // errors allow you to provide inormation
+    // about why an operation failed
+    // they are returned to the caller of the function
+    error InsufficientBalance(uint requested, uint available);
+
+    // Sends an amount of existing coins from the caller to an address
+    function send(address receiver, uint amount) public {
+        if (amount > balances[msg.sender])
+            revert InsufficientBalance({
+                requested: amount,
+                available: balances[msg.sender]
+            })
+        balances[msg.sender] -= amount;
+        balances[receiver] += amount;
+        emit Sent(msg.sender, receiver, amount);
+    }
+
+}
+
+```
